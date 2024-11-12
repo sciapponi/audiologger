@@ -1,0 +1,12 @@
+SAMPLING_RATE: 16000
+CHUNK_SIZE: 512
+
+SILERO:
+  MODEL_PATH: "models/silero_vad.onnx"
+
+NAC:
+  MODEL_PATH: ""
+
+MQTT:
+  BROKER_ADDRESS: "localhost"
+
