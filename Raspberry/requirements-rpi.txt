@@ -1,3 +1,5 @@
 numpy 
 sounddevice
 onnxruntime
+hydra-core
+paho-mqtt

@@ -3,6 +3,12 @@ import sounddevice as sd
 import onnxruntime
 from time import time as current_time
 import hydra 
+import sys
+import paho.mqtt.client as paho
+import json
+from utils import FIFOBuffer
+import threading 
+import datetime
 
 # Use the provided OnnxWrapper and VADIterator classes
 class OnnxWrapper():
@@ -122,13 +128,15 @@ class VADIterator:
         self.temp_end = 0
         self.current_sample = 0
 
-    def __call__(self, x, return_seconds=False):
+    def __call__(self, x, buf, return_seconds=False):
         if not isinstance(x, np.ndarray):
             try:
                 x = np.array(x, dtype=np.float32)
             except:
                 raise TypeError("Audio cannot be casted to numpy array. Cast it manually")
-
+        # print(x.shape)
+        if self.triggered:
+            buf.enqueue(x.tolist())
         window_size_samples = len(x[0]) if x.ndim == 2 else len(x)
         self.current_sample += window_size_samples
 
@@ -162,30 +170,72 @@ class VADIterator:
 @hydra.main(version_base=None, config_path='./config', config_name='base')
 def main(args):
     
+    client = paho.Client(paho.CallbackAPIVersion.VERSION1)
+
+    if client.connect("localhost", 1883, 60) != 0:
+        print("Couldn't connect to the mqtt broker")
+        sys.exit(1)
+
+    def infer_nac(audio_data, session):
+        inputs = session.get_inputs()
+        input_name = inputs[0].name
+        
+        print("AUDIODATASHAPE",audio_data.shape)
+        audio_data = np.expand_dims(audio_data[:16000],(0,1))
+
+        model_output = session.run(None, {input_name: audio_data})  # Pass audio to model
+        return model_output[0]
+    
     def audio_callback(indata, frames, time, status):
         if status:
             print(status)
         # start = current_time()
         audio_chunk = np.array(indata[:, 0], dtype=np.float32)  # Convert to numpy array
-        result = vad_iterator(audio_chunk)
+        result = vad_iterator(audio_chunk, buffer)
         # print('inference time:', current_time()- start, 'use percent:', (current_time()-start)/0.032*100,'%')
         if result is not None:
+            
             print(result)
-    
+           
+    # AUDIO LOGGING
+    def log_audio(buf):
+        while True:
+            out = buf.dequeue()
+            out = infer_nac(np.array(out, dtype=np.float32),nac_model).tolist()
+            out = json.dumps({"data": out, "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}) 
+            client.publish("VAD", out, 0)
+            
+        
     # Constants
     SAMPLING_RATE = args.SAMPLING_RATE
     CHUNK_SIZE = args.CHUNK_SIZE  # 512 Corresponds to 32 ms at 16 kHz
-    # Load ONNX model
+    
+    # LVAD MODEL
     onnx_model_path = args.SILERO.MODEL_PATH  # Path to the ONNX model file
     onnx_model = OnnxWrapper(onnx_model_path)
     vad_iterator = VADIterator(onnx_model)
     
+    # NAC MODEL
+    nac_path = "models/encoder_quant.onnx"
+    nac_model = onnxruntime.InferenceSession(nac_path)
 
+    buffer = FIFOBuffer(SAMPLING_RATE)
+    
+
+    # Thread which handles buffer dequeue and sends data with MQTT Client
+    t1 = threading.Thread(target=log_audio, args=(buffer,))
+    t1.daemon = True
+    t1.start()
+    
     # Start the audio stream
     with sd.InputStream(channels=1, samplerate=SAMPLING_RATE, callback=audio_callback, blocksize=CHUNK_SIZE):
         print("Streaming audio from the microphone. Press Ctrl+C to stop.")
+        
         sd.sleep(int(30 * 1000))  # Stream for 30 seconds
-
+    
+        print("Stream Ended")
+        
+    exit()
     print("Audio stream stopped.")
 
 if __name__=="__main__":
