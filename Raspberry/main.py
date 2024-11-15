@@ -201,10 +201,10 @@ def main(args):
     def log_audio(buf):
         while True:
             out = buf.dequeue()
-            out = infer_nac(np.array(out, dtype=np.float32),nac_model).tolist()
+            out = infer_nac(np.array(out, dtype=np.float16),nac_model).tolist()
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            out = json.dumps({ "timestamp":timestamp, "data": out}) 
-            client.publish("LOGGER_1", out, 0)
+            out = json.dumps({"id": args.LOGGER_ID, "timestamp":timestamp, "data": out}) 
+            client.publish("AUDIOLOGGER", out, 0)
             
         
     # Constants
@@ -217,8 +217,11 @@ def main(args):
     vad_iterator = VADIterator(onnx_model)
     
     # NAC MODEL
+    # opts = onnxruntime.SessionOptions()
+    # opts.inter_op_num_threads = 1
+    # opts.intra_op_num_threads = 1
     nac_path = args.NAC.MODEL_PATH
-    nac_model = onnxruntime.InferenceSession(nac_path)
+    nac_model = onnxruntime.InferenceSession(nac_path, providers=['CPUExecutionProvider'])
 
     buffer = FIFOBuffer(SAMPLING_RATE)
     

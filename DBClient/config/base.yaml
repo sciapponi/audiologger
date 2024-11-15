@@ -1,6 +1,13 @@
- SAMPLING_RATE: 16000
+SAMPLING_RATE: 16000
 
- INFLUXDB:
-  
+INFLUXDB:
+  URL: "http://localhost:8086"
+  TOKEN: "aaM5fz5n-KDzZl0iNZ_Dc9k65sdKi9-VyI_-wHAcFHWTwL58StOfrb_W7xu-n2GCZbYJdhihlRCUya2n9jU8wg=="
+  ORG: "UNF"
+  BUCKET: "Audio Logger"  
+
 NAC:
   MODEL_PATH: ""
+
+MQTT:
+  BROKER_ADDRESS: "localhost"
