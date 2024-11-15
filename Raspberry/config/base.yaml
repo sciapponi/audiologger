@@ -5,7 +5,7 @@ SILERO:
   MODEL_PATH: "models/silero_vad.onnx"
 
 NAC:
-  MODEL_PATH: ""
+  MODEL_PATH: "models/encoder_quant.onnx"
 
 MQTT:
   BROKER_ADDRESS: "localhost"

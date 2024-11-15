@@ -172,7 +172,7 @@ def main(args):
     
     client = paho.Client(paho.CallbackAPIVersion.VERSION1)
 
-    if client.connect("localhost", 1883, 60) != 0:
+    if client.connect(args.MQTT.BROKER_ADDRESS, 1883, 60) != 0:
         print("Couldn't connect to the mqtt broker")
         sys.exit(1)
 
@@ -202,8 +202,9 @@ def main(args):
         while True:
             out = buf.dequeue()
             out = infer_nac(np.array(out, dtype=np.float32),nac_model).tolist()
-            out = json.dumps({"data": out, "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}) 
-            client.publish("VAD", out, 0)
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            out = json.dumps({ "timestamp":timestamp, "data": out}) 
+            client.publish("LOGGER_1", out, 0)
             
         
     # Constants
@@ -216,7 +217,7 @@ def main(args):
     vad_iterator = VADIterator(onnx_model)
     
     # NAC MODEL
-    nac_path = "models/encoder_quant.onnx"
+    nac_path = args.NAC.MODEL_PATH
     nac_model = onnxruntime.InferenceSession(nac_path)
 
     buffer = FIFOBuffer(SAMPLING_RATE)
