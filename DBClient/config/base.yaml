@@ -7,7 +7,7 @@ INFLUXDB:
   BUCKET: "Audio Logger"  
 
 NAC:
-  MODEL_PATH: ""
+  MODEL_PATH: "/home/ste/Code/audiologger/DBClient/model/quant_decoder_components.ckpt"
 
 MQTT:
   BROKER_ADDRESS: "localhost"
