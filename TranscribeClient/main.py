@@ -24,7 +24,7 @@ def main(args):
 
     # Callback when the client connects to the broker
     def on_connect(client, userdata, flags, rc):
-        print(f"Connected to MQTT Broker with code {rc}")
+        # print(f"Connected to MQTT Broker with code {rc}")
         client.subscribe(MQTT_TOPIC)
 
     # Buffer to hold the indices
@@ -51,12 +51,6 @@ def main(args):
             print("Stream Ended")
             sys.exit(0)
 
-    def start_thread(condition):
-        if(condition and not wthread.is_alive()):
-            wthread.start()
-        else:
-            wthread.stop()
-
     wthread = WhisperDecodingThreadWrapper(buffer, decoder, wmodel)
     wthread.daemon = True
     wthread.start()
@@ -69,9 +63,10 @@ def main(args):
     mqtt_client.on_message = on_message
 
     # Connect to MQTT Broker
-    print("Connecting to MQTT Broker...")
+    # print("Connecting to MQTT Broker...")
     mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
+    print("\n\n\n")
     # Start MQTT loop
     mqtt_client.loop_forever()
     wthread.stop()

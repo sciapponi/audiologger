@@ -150,7 +150,7 @@ class VADIterator:
             speech_start = self.current_sample - self.speech_pad_samples - window_size_samples
             return {'start': int(speech_start) if not return_seconds else round(speech_start / self.sampling_rate, 1)}
 
-        if (speech_prob < self.threshold - 0.15) and self.triggered:
+        if (speech_prob < self.threshold - 0.20) and self.triggered:
             if not self.temp_end:
                 self.temp_end = self.current_sample
             if self.current_sample - self.temp_end < self.min_silence_samples:
@@ -194,7 +194,6 @@ def main(args):
         result = vad_iterator(audio_chunk, buffer)
         # print('inference time:', current_time()- start, 'use percent:', (current_time()-start)/0.032*100,'%')
         if result is not None:
-            
             print(result)
            
     # AUDIO LOGGING
