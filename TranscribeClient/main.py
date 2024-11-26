@@ -28,7 +28,7 @@ def main(args):
         client.subscribe(MQTT_TOPIC)
 
     # Buffer to hold the indices
-    buffer = FIFOBuffer(6)
+    buffer = FIFOBuffer(20)
     # Callback when a message is received from the broker
     def on_message(client, userdata, msg):
      # Ensure we can modify the global buffer

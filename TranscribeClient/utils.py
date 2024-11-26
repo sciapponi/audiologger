@@ -21,7 +21,7 @@ class FIFOBuffer:
             while len(self.buf) < self.length:
                 # Calculate the remaining time to wait
                 elapsed = time.time() - start_time
-                remaining = 10 - elapsed
+                remaining = 30 - elapsed
                  # If 10 seconds have passed and the buffer is not empty, break the loop
                 if remaining <= 0 and len(self.buf)>0: 
                     break
