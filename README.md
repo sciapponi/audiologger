@@ -2,6 +2,20 @@
 ![alt text](https://github.com/sciapponi/audiologger/blob/main/img/diagram-20241121.png)
 # General Information
 Audio Logger with VAD and Neural Audio Codec on RaspberryPi and MQTT
+
+# MQTT-Broker
+
+Install mosquitto e.g.:
+
+```bash
+sudo apt install mosquitto
+```
+
+Set it up the desired way. To perform a general open port test run it with a general configuration file by:
+
+```bash
+mosquitto -c TranscribeClient/mosquitto.conf
+```
 # RaspberryPi
 
 Clone this Repository:
