@@ -71,7 +71,7 @@ The config file has the following structure:
 SAMPLING_RATE: 16000
 
 NAC:
-  MODEL_PATH: "/home/ste/Code/audiologger/TranscribeClient/model/quant_decoder_components.ckpt"
+  MODEL_PATH: "/path/to/repo/TranscribeClient/model/quant_decoder_components.ckpt"
 
 MQTT:
   BROKER_ADDRESS: "localhost"
