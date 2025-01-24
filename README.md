@@ -29,7 +29,9 @@ Run the **main.py** script with optional overriding of the config file name by:
 ```bash
 python3 main.py --config-name=your-config-name.yaml
 ```
-# Transcriber Client Setup
+# Transcribe Client Setup
+### Laptop Setup
+Analogous to the RPi Setup but considering the **TranscribeClient** folder.
 ### NVIDIA JETSON SETUP
 
 Clone Jetson Containers repo:
@@ -47,7 +49,7 @@ cd ~
 git clone https://github.com/sciapponi/audiologger
 ```
 
-Install the Transcriber Client Requirements, edit or create a new config file and run the **main.py** to start the client.
+Install the Transcribe Client Requirements, edit or create a new config file and run the **main.py** to start the client.
 
 The config file has the following structure:
 
