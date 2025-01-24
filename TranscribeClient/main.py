@@ -51,7 +51,7 @@ def main(args):
             print("Stream Ended")
             sys.exit(0)
 
-    wthread = WhisperDecodingThreadWrapper(buffer, decoder, wmodel)
+    wthread = WhisperDecodingThreadWrapper(buffer, decoder, wmodel, language = args.WHISPER.LANGUAGE)
     wthread.daemon = True
     wthread.start()
 

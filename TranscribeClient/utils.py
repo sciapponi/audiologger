@@ -43,6 +43,7 @@ class WhisperDecodingThreadWrapper(threading.Thread):
         self.wmodel = wmodel
         self.decoder = decoder
         self.running = True
+        self.language = language
 
     def run(self):
         print("run started!")
@@ -53,7 +54,7 @@ class WhisperDecodingThreadWrapper(threading.Thread):
             # print("audio out:", audio_out.shape)
             audio = whisper.pad_or_trim(audio_out)
             mel = whisper.log_mel_spectrogram(audio.squeeze().cuda(), n_mels=128)
-            options = whisper.DecodingOptions(language="en", task="transcribe")
+            options = whisper.DecodingOptions(language=self.language, task="transcribe")
             result = whisper.decode(self.wmodel, mel, options)
             print("TRANSCRIPTION: \t",result.text)
 

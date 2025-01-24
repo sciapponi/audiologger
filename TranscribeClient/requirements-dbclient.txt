@@ -1,9 +1,6 @@
 openai-whisper
 paho-mqtt
 torch
-torchaudio
-influxdb-client
-torchaudio
 soundstream
 lightning
 torchmetrics

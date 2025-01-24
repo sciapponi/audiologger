@@ -225,7 +225,7 @@ def main(args):
     t1.start()
 
     # Read the audio file
-    audio_data, samplerate = sf.read("In.wav", dtype='float32')
+    audio_data, samplerate = sf.read("test_audio/In.wav", dtype='float32')
     if samplerate != SAMPLING_RATE:
         raise ValueError(f"Sampling rate of input file ({samplerate} Hz) does not match the expected rate ({SAMPLING_RATE} Hz)")
 
