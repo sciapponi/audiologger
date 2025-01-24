@@ -5,3 +5,4 @@ soundstream
 lightning
 torchmetrics
 wandb
+hydra-core

@@ -15,7 +15,8 @@ class QuantDecoder(nn.Module):
             dim=256,
             kmeans_init=True,
             kmeans_iters=100,
-            threshold_ema_dead_code=2
+            threshold_ema_dead_code=2,
+            sync_codebook=False
         )
         
         # Load state dict
