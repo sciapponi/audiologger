@@ -1,16 +1,14 @@
 import numpy as np
-import sounddevice as sd
+import alsaaudio
 import onnxruntime
 from time import time as current_time
-import hydra 
+import hydra
 import sys
 import paho.mqtt.client as paho
 import json
 from utils import FIFOBuffer
-import threading 
+import threading
 import datetime
-import soundfile as sf 
-import time 
 
 # Use the provided OnnxWrapper and VADIterator classes
 class OnnxWrapper():
@@ -53,7 +51,7 @@ class OnnxWrapper():
         self._last_batch_size = 0
 
     def __call__(self, x, sr: int):
-        x, sr = self._validate_input(x.squeeze(), sr)
+        x, sr = self._validate_input(x, sr)
         num_samples = 512 if sr == 16000 else 256
 
         if x.shape[-1] != num_samples:
@@ -149,11 +147,10 @@ class VADIterator:
 
         if (speech_prob >= self.threshold) and not self.triggered:
             self.triggered = True
-            buf.enqueue(x.tolist())
             speech_start = self.current_sample - self.speech_pad_samples - window_size_samples
             return {'start': int(speech_start) if not return_seconds else round(speech_start / self.sampling_rate, 1)}
 
-        if (speech_prob < self.threshold - 0.15) and self.triggered:
+        if (speech_prob < self.threshold - 0.20) and self.triggered:
             if not self.temp_end:
                 self.temp_end = self.current_sample
             if self.current_sample - self.temp_end < self.min_silence_samples:
@@ -166,11 +163,9 @@ class VADIterator:
 
         return None
 
-
-
-
 @hydra.main(version_base=None, config_path='./config', config_name='base')
 def main(args):
+
     client = paho.Client(paho.CallbackAPIVersion.VERSION1)
 
     if client.connect(args.MQTT.BROKER_ADDRESS, 1883, 60) != 0:
@@ -180,33 +175,35 @@ def main(args):
     def infer_nac(audio_data, session):
         inputs = session.get_inputs()
         input_name = inputs[0].name
-        print("AUDIODATASHAPE", audio_data.shape)
-        audio_data = np.expand_dims(audio_data.squeeze()[:16000], (0, 1))
+
+        print("AUDIODATASHAPE",audio_data.shape)
+        audio_data = np.expand_dims(audio_data[:16000],(0,1))
+
         model_output = session.run(None, {input_name: audio_data})  # Pass audio to model
         return model_output[0]
 
-    def process_audio(audio_data, samplerate):
-        chunk_size = args.CHUNK_SIZE  # Number of samples per chunk
-        for start in range(0, len(audio_data), chunk_size):
-            chunk = audio_data[start:start + chunk_size]
-            if len(chunk) < chunk_size:
-                # Pad the last chunk with zeros if it's smaller than CHUNK_SIZE
-                chunk = np.pad(chunk, (0, chunk_size - len(chunk)), mode='constant')
-            chunk = np.expand_dims(chunk, axis=1)  # Add channel dimension
-            yield chunk
+    def audio_callback():
+        while True:
+            l, data = inp.read()
+            if l:
+                audio_chunk = np.frombuffer(data, dtype=np.int16).astype(np.float32) / 32768.0
+                result = vad_iterator(audio_chunk, buffer)
+                if result is not None:
+                    print(result)
 
     # AUDIO LOGGING
     def log_audio(buf):
         while True:
             out = buf.dequeue()
-            out = infer_nac(np.array(out, dtype=np.float16), nac_model).tolist()
+            out = infer_nac(np.array(out, dtype=np.float16),nac_model).tolist()
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            out = json.dumps({"id": args.LOGGER_ID, "timestamp": timestamp, "data": out})
+            out = json.dumps({"id": args.LOGGER_ID, "timestamp":timestamp, "data": out})
             client.publish("AUDIOLOGGER", out, 0)
+
 
     # Constants
     SAMPLING_RATE = args.SAMPLING_RATE
-    CHUNK_SIZE = args.CHUNK_SIZE  # 512 corresponds to 32 ms at 16 kHz
+    CHUNK_SIZE = args.CHUNK_SIZE  # 512 Corresponds to 32 ms at 16 kHz
 
     # LVAD MODEL
     onnx_model_path = args.SILERO.MODEL_PATH  # Path to the ONNX model file
@@ -219,26 +216,21 @@ def main(args):
 
     buffer = FIFOBuffer(SAMPLING_RATE)
 
+    # Initialize alsaaudio input
+    inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NONBLOCK)
+    inp.setchannels(1)
+    inp.setrate(SAMPLING_RATE)
+    inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+    inp.setperiodsize(CHUNK_SIZE)
+
     # Thread which handles buffer dequeue and sends data with MQTT Client
     t1 = threading.Thread(target=log_audio, args=(buffer,))
     t1.daemon = True
     t1.start()
 
-    # Read the audio file
-    audio_data, samplerate = sf.read("test_audio/ita.wav", dtype='float32')
-    if samplerate != SAMPLING_RATE:
-        raise ValueError(f"Sampling rate of input file ({samplerate} Hz) does not match the expected rate ({SAMPLING_RATE} Hz)")
+    # Start the audio stream
+    print("Streaming audio from the microphone. Press Ctrl+C to stop.")
+    audio_callback()
 
-    print("Streaming audio from file. Press Ctrl+C to stop.")
-    try:
-        for chunk in process_audio(audio_data, samplerate):
-            time.sleep(0.064)
-            result = vad_iterator(chunk, buffer)
-            if result is not None:
-                print(result)
-    except KeyboardInterrupt:
-        print("Stream Ended")
-        sys.exit(0)
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()

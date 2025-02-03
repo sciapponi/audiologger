@@ -1,0 +1,13 @@
+LOGGER_ID: 1
+SAMPLING_RATE: 16000
+CHUNK_SIZE: 512
+
+SILERO:
+  MODEL_PATH: "models/silero_vad.onnx"
+
+NAC:
+  MODEL_PATH: "models/encoder_quant_fp16.onnx"
+
+MQTT:
+  BROKER_ADDRESS: "192.168.42.222"
+
