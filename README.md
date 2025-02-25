@@ -1,4 +1,5 @@
-# audiologger
+# Edge-To-Gateway NAC Deployment
+
 ![alt text](https://github.com/sciapponi/audiologger/blob/main/img/diagram-20241121.png)
 # General Information
 Audio Logger with VAD and Neural Audio Codec on RaspberryPi and MQTT
